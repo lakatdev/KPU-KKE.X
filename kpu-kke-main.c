@@ -3,7 +3,6 @@
  * Author: Róbert Fodor
  * Device: PIC16F628A
  * Sensor: AHT30
- * Update: No EEPROM usage. All settings hardcoded or global variables.
  */
 
 // PIC16F628A Configuration Bit Settings
