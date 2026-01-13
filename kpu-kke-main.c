@@ -1,6 +1,6 @@
 /*
  * File:   kpu-kke-aht30.c
- * Author: Róbert Fodor
+ * Author: Rï¿½bert Fodor
  * Device: PIC16F628A
  * Sensor: AHT30
  */
@@ -31,10 +31,10 @@
 #define AHT30_R_ADDR 0x71
 
 unsigned char stored_key = 0x67;
-unsigned char hum_limit_low = 80;
-unsigned char hum_limit_high = 90;
-unsigned char temp_limit_low = 23;
-unsigned char temp_limit_high = 28;
+unsigned int hum_limit_low = 800;
+unsigned int hum_limit_high = 900;
+unsigned int temp_limit_low = 270;
+unsigned int temp_limit_high = 300;
 
 void I2C_Idle(void)
 {
@@ -139,8 +139,8 @@ unsigned char AHT30_Read(long *temp, long *hum)
     unsigned long raw_h = ((unsigned long)data[1] << 12) | ((unsigned long)data[2] << 4) | (data[3] >> 4);
     unsigned long raw_t = ((unsigned long)(data[3] & 0x0F) << 16) | ((unsigned long)data[4] << 8) | data[5];
     
-    *hum = (raw_h * 100) >> 20;
-    *temp = ((raw_t * 200) >> 20) - 50;
+    *hum = (raw_h * 1000) >> 20;
+    *temp = ((raw_t * 2000) >> 20) - 500;
     
     return 1;
 }
@@ -162,29 +162,29 @@ void UART_Write(char data)
 
 void NumToStr(char* buf, unsigned int num)
 {
-    if (num < 0)
+    if (num > 9999)
     {
-        num = 0;
+        num = 9999;
     }
     
-    if (num > 999)
+    char d1 = '0'; char d2 = '0'; char d3 = '0'; char d4 = '0';
+    while (num >= 1000)
     {
-        num = 999;
+        num -= 1000;
+        d1++;
     }
-    
-    char d1 = '0'; char d2 = '0'; char d3 = '0';
     while (num >= 100)
     {
         num -= 100;
-        d1++;
+        d2++;
     }
     while (num >= 10)
     {
         num -= 10;
-        d2++;
+        d3++;
     }
-    d3 += (char)num;
-    buf[0] = d1; buf[1] = d2; buf[2] = d3;
+    d4 += (char)num;
+    buf[0] = d1; buf[1] = d2; buf[2] = d3; buf[3] = d4;
 }
 
 void main(void)
@@ -204,7 +204,7 @@ void main(void)
     
     long temp_c = 0;
     long hum_p = 0;
-    char buffer[7];
+    char buffer[9];
     
     unsigned char current_porta = 0xFF; 
     unsigned char last_porta = 0xFF;
@@ -215,10 +215,10 @@ void main(void)
         
         if ((last_porta & 0x01) == 0 && (current_porta & 0x01) != 0)
         {
-            hum_limit_low = 80;
-            hum_limit_high = 90;
-            temp_limit_low = 27;
-            temp_limit_high = 30;
+            hum_limit_low = 800;
+            hum_limit_high = 900;
+            temp_limit_low = 270;
+            temp_limit_high = 300;
             UART_Write('M');
             UART_Write('1');
             UART_Write('\r'); 
@@ -227,10 +227,10 @@ void main(void)
         
         if ((last_porta & 0x02) == 0 && (current_porta & 0x02) != 0)
         {
-            hum_limit_low = 70;
-            hum_limit_high = 80;
-            temp_limit_low = 26;
-            temp_limit_high = 29;
+            hum_limit_low = 700;
+            hum_limit_high = 800;
+            temp_limit_low = 260;
+            temp_limit_high = 290;
             UART_Write('M');
             UART_Write('2');
             UART_Write('\r'); 
@@ -239,10 +239,10 @@ void main(void)
 
         if ((last_porta & 0x40) == 0 && (current_porta & 0x40) != 0)
         {
-            hum_limit_low = 60;
-            hum_limit_high = 75;
-            temp_limit_low = 25;
-            temp_limit_high = 30;
+            hum_limit_low = 600;
+            hum_limit_high = 750;
+            temp_limit_low = 250;
+            temp_limit_high = 300;
             UART_Write('M');
             UART_Write('3');
             UART_Write('\r'); 
@@ -251,10 +251,10 @@ void main(void)
 
         if ((last_porta & 0x80) == 0 && (current_porta & 0x80) != 0)
         {
-            hum_limit_low = 50;
-            hum_limit_high = 65;
-            temp_limit_low = 24;
-            temp_limit_high = 30;
+            hum_limit_low = 500;
+            hum_limit_high = 650;
+            temp_limit_low = 240;
+            temp_limit_high = 300;
             UART_Write('M');
             UART_Write('4');
             UART_Write('\r'); 
@@ -294,9 +294,9 @@ void main(void)
         if ((timer_counter % 100) == 0) 
         {
             NumToStr(&buffer[0], (unsigned int)temp_c);
-            NumToStr(&buffer[3], (unsigned int)hum_p);
+            NumToStr(&buffer[4], (unsigned int)hum_p);
             
-            for (int k=0; k < 6; k++)
+            for (int k=0; k < 8; k++)
             {
                 UART_Write(buffer[k] ^ stored_key);
             }
